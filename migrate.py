@@ -26,7 +26,7 @@ import json
 import requests
 import sys
 from datetime import datetime
-from meraki import meraki
+import meraki
 
 
 # Prints a line of text that is meant for the user to read
@@ -84,12 +84,21 @@ def main(argv):
         printhelp()
         sys.exit(2)'''
 
+    # Instantiate a Meraki dashboard API session
+    dashboard = meraki.DashboardAPI(
+        api_key,
+        output_log=False
+        # log_file_prefix=os.path.basename(__file__)[:-3],
+        # log_path='',
+        # print_console=False
+    )
+
     # Find all networks matching input tag
-    networks = meraki.getnetworklist(api_key, org_id)
+    networks = dashboard.organizations.getOrganizationNetworks(org_id)
     tagged_networks = [network for network in networks if network['tags'] is not None and arg_tag in network['tags']]
 
     # Find all templates
-    templates = meraki.gettemplates(api_key, org_id)
+    templates = dashboard.organizations.getOrganizationConfigTemplates(org_id)
     template_ids = [template['id'] for template in templates]
     template_names = [template['name'] for template in templates]
     target_template_id = template_ids[template_names.index(arg_template)]
@@ -119,23 +128,23 @@ def main(argv):
     for network in tagged_networks:
         net_id = network['id']
         net_name = network['name']
-        old_vlans = meraki.getvlans(api_key, net_id)
+        old_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
         old_vlan_ids = [vlan['id'] for vlan in old_vlans]
         if 'configTemplateId' in network:
             template_name = template_names[template_ids.index(network['configTemplateId'])]
             print('Unbinding network {0} from current template {1}'.format(net_name, template_name))
-            meraki.unbindfromtemplate(api_key, net_id)
+            dashboard.networks.unbindNetwork(net_id)
         print('Binding network {0} to target template {1}'.format(net_name, arg_template))
         if arg_switch in ('True', 'true'):
-            meraki.bindtotemplate(api_key, net_id, target_template_id, True)
+            dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
         else:
-            meraki.bindtotemplate(api_key, net_id, target_template_id, False)
-        new_vlans = meraki.getvlans(api_key, net_id)
+            dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=False)
+        new_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
         for new_vlan in new_vlans:
             vlan_id = new_vlan['id']
             old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
             if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
-                meraki.updatevlan(api_key, net_id, vlan_id, subnet=old_vlan['subnet'], mxip=old_vlan['applianceIp'])
+                dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
 
 
 if __name__ == '__main__':
