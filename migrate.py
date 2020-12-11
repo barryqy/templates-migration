@@ -123,6 +123,9 @@ def main(argv):
         if 'count' in template and template['count'] > 0:
             print('{0} networks are currently bound to template {1}'.format(template['count'], template['name']))
     continue_run = input('Continue to update by binding all {0} networks to the {1} template? (Y/N) '.format(len(tagged_networks), arg_template))
+    if continue_run[0] == 'n':
+        quit()
+    
 
     # Update and bind networks to template
     for network in tagged_networks:
@@ -134,6 +137,70 @@ def main(argv):
             template_name = template_names[template_ids.index(network['configTemplateId'])]
             print('Unbinding network {0} from current template {1}'.format(net_name, template_name))
             dashboard.networks.unbindNetwork(net_id)
+            
+            ###########################################################
+            #     New device type issue fix 
+            ###########################################################
+
+            #Prompt user if new network need to be added to this network
+            reply = input('Do you wish to add a new network to ' + net_name + '? (Y/N)' ).lower()
+            while reply[0] not in {"y", "n"}:
+                reply = input('Please answer Y/N only: ').lower()
+            if reply[0] == 'y':
+                inputValid = False
+                while not inputValid:
+                    net_name = input('Please enter the name for the new network: ')
+                    inputValid = True
+                    for network in networks:
+                        if network['name'].lower() == net_name.lower():
+                            print ("Network already exists...Please try again")
+                            inputValid = False
+
+                validtypes = ['wireless', 'appliance', 'switch', 'systemsManager', 'camera', 'cellularGateway']
+                index = 0
+                print ('Please choose type of the a new network')
+                for ntype in validtypes:
+                    index = index + 1
+                    print(str(index) + ') ' + ntype)
+                inputValid = False
+                while not inputValid:
+                    inputRaw = input('option' + ': ')
+                    inputNo = int(inputRaw) - 1
+                    if inputNo > -1 and inputNo < len(validtypes):
+                        net_type = validtypes[inputNo]
+                        print('Selected option: ' + net_type)
+                        inputValid = True
+                        break
+                    else:
+                        print('Please select a valid option number')
+                print("Creating network " + net_name + ' and network type is ' + net_type + ' ...')
+
+                ## Adding new network
+                try:
+                    response = dashboard.organizations.createOrganizationNetwork(org_id, net_name, net_type)
+                except meraki.APIError as e:
+                    print(f'Meraki API error: {e}')
+                    print(f'status code = {e.status}')
+                    print(f'reason = {e.reason}')
+                    print(f'error = {e.message}')
+                    continue
+                except Exception as e:
+                    print(f'some other error: {e}')
+                    continue
+                else:   
+                    net_ids = []
+                    net_ids[0] = response["id"]
+                
+                    ## Split and bind network with additional component
+                    
+                    split_networks = dashboard.networks.splitNetwork(net_id)
+                    for split_network in split_networks:
+                        net_ids.append(split_network)
+                    dashboard.organizations.combineOrganizationNetworks(org_id, net_name, net_ids)
+            ###########################################################
+            #     End of New device type issue fix 
+            ###########################################################
+
         print('Binding network {0} to target template {1}'.format(net_name, arg_template))
         if arg_switch in ('True', 'true'):
             dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
