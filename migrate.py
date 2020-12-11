@@ -122,17 +122,17 @@ def main(argv):
     for template in templates:
         if 'count' in template and template['count'] > 0:
             print('{0} networks are currently bound to template {1}'.format(template['count'], template['name']))
-    continue_run = input('Continue to update by binding all {0} networks to the {1} template? (Y/N) '.format(len(tagged_networks), arg_template))
-    if continue_run[0] == 'n':
-        quit()
+
     
 
     # Update and bind networks to template
     for network in tagged_networks:
         net_id = network['id']
         net_name = network['name']
+        original_net_name = net_name
         old_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
         old_vlan_ids = [vlan['id'] for vlan in old_vlans]
+        temp_network_name = ''
         if 'configTemplateId' in network:
             template_name = template_names[template_ids.index(network['configTemplateId'])]
             print('Unbinding network {0} from current template {1}'.format(net_name, template_name))
@@ -148,14 +148,14 @@ def main(argv):
                 reply = input('Please answer Y/N only: ').lower()
             if reply[0] == 'y':
                 inputValid = False
-                while not inputValid:
-                    net_name = input('Please enter the name for the new network: ')
-                    inputValid = True
-                    for network in networks:
-                        if network['name'].lower() == net_name.lower():
-                            print ("Network already exists...Please try again")
-                            inputValid = False
-
+                if temp_network_name == '':
+                    while not inputValid:
+                        net_name = input('Please enter the name for the new network: ')
+                        inputValid = True
+                        for network in networks:
+                            if network['name'].lower() == net_name.lower():
+                                print ("Network already exists...Please try again")
+                                inputValid = False
                 validtypes = ['wireless', 'appliance', 'switch', 'systemsManager', 'camera', 'cellularGateway']
                 index = 0
                 print ('Please choose type of the a new network')
@@ -174,10 +174,10 @@ def main(argv):
                     else:
                         print('Please select a valid option number')
                 print("Creating network " + net_name + ' and network type is ' + net_type + ' ...')
-
+                net_type_array = [net_type]
                 ## Adding new network
                 try:
-                    response = dashboard.organizations.createOrganizationNetwork(org_id, net_name, net_type)
+                    response = dashboard.organizations.createOrganizationNetwork(org_id, net_name, net_type_array)
                 except meraki.APIError as e:
                     print(f'Meraki API error: {e}')
                     print(f'status code = {e.status}')
@@ -189,18 +189,23 @@ def main(argv):
                     continue
                 else:   
                     net_ids = []
-                    net_ids[0] = response["id"]
+                    net_ids.append(response['id'])
                 
                     ## Split and bind network with additional component
                     
                     split_networks = dashboard.networks.splitNetwork(net_id)
-                    for split_network in split_networks:
-                        net_ids.append(split_network)
-                    dashboard.organizations.combineOrganizationNetworks(org_id, net_name, net_ids)
+                    for split_network in split_networks["resultingNetworks"]:
+                        net_ids.append(split_network['id'])
+                    response = dashboard.organizations.combineOrganizationNetworks(org_id, original_net_name, net_ids)
+                    net_id = response["resultingNetwork"]['id']
             ###########################################################
             #     End of New device type issue fix 
             ###########################################################
 
+        continue_run = input('Continue to update by binding all {0} networks to the {1} template? (Y/N) '.format(len(tagged_networks), arg_template))
+        if continue_run[0] == 'n':
+            quit()
+            
         print('Binding network {0} to target template {1}'.format(net_name, arg_template))
         if arg_switch in ('True', 'true'):
             dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
