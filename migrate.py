@@ -151,6 +151,7 @@ def main(argv):
                 if temp_network_name == '':
                     while not inputValid:
                         net_name = input('Please enter the name for the new network: ')
+                        temp_network_name == net_name
                         inputValid = True
                         for network in networks:
                             if network['name'].lower() == net_name.lower():
