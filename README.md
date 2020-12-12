@@ -16,9 +16,9 @@ Optionally, auto-bind the network's switches to profiles, as specified in the AP
 === New device type fix ===\
 New section added to fix new device type issues. Additional question will prompt user to add new device type into network.\
 Answer "y" to the question \
-'''
+```
 'Do you wish to add a new network to ' + net_name + '? (Y/N)'
-'''
+```
 
 === USAGE ===\
 python migrate.py -k <api_key> -o <org_id> -t <target_template_name> -n <network_tag> [-s <auto_bind>]
