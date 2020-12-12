@@ -87,7 +87,9 @@ def main(argv):
     # Instantiate a Meraki dashboard API session
     dashboard = meraki.DashboardAPI(
         api_key,
-        output_log=False
+        output_log=False,
+        print_console=False,
+        suppress_logging=True
         # log_file_prefix=os.path.basename(__file__)[:-3],
         # log_path='',
         # print_console=False
