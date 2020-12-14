@@ -125,10 +125,52 @@ def main(argv):
         if 'count' in template and template['count'] > 0:
             print('{0} networks are currently bound to template {1}'.format(template['count'], template['name']))
 
+    ###########################################################
+    #     New device type issue fix part 1
+    ###########################################################
     
+    ### New device type issue - Ask user input for batch process
+    temp_network_name = ''
+    add_network_type = False
+    inputValid = False
+    bind_template = False
+    print("### New Device Type Issue Fix ###")
+    reply = input('Do you wish to add a new network type to all ' + str(len(tagged_networks)) + ' networks? (Y/N)' ).lower()
+    while reply[0] not in {"y", "n"}:
+        reply = input('Please answer Y/N only: ').lower()
+    if reply[0] == 'y':
+        add_network_type = True
+        while not inputValid:
+            temp_network_name = input('Please enter a name for the new temporary network, same name will be reused for subsequent operations: ')
+            inputValid = True
+            for network in networks:
+                if network['name'].lower() == temp_network_name.lower():
+                    print ("Network already exists...Please try again")
+                    inputValid = False
+        validtypes = ['wireless', 'appliance', 'switch', 'systemsManager', 'camera', 'cellularGateway']
+        index = 0
+        print ('Please choose type of the a new network, this will be added to all ' + str(len(tagged_networks)) + ' networks: ')
+        for ntype in validtypes:
+            index = index + 1
+            print(str(index) + ') ' + ntype)
+        inputValid = False
+        while not inputValid:
+            inputRaw = input('option' + ': ')
+            inputNo = int(inputRaw) - 1
+            if inputNo > -1 and inputNo < len(validtypes):
+                net_type = validtypes[inputNo]
+                print('Selected option: ' + net_type)
+                inputValid = True
+                net_type_array = [net_type]
+                break
+            else:
+                print('Please select a valid option number')
+
+    ###########################################################
+    #     End of New device type issue fix part 1
+    ###########################################################
 
     # Update and bind networks to template
-    temp_network_name = ''
     for network in tagged_networks:
         net_id = network['id']
         net_name = network['name']
@@ -141,46 +183,14 @@ def main(argv):
             dashboard.networks.unbindNetwork(net_id)
             
             ###########################################################
-            #     New device type issue fix 
+            #     New device type issue fix part 2
             ###########################################################
-
-            #Prompt user if new network need to be added to this network
-            reply = input('Do you wish to add a new network type to ' + net_name + '? (Y/N)' ).lower()
-            while reply[0] not in {"y", "n"}:
-                reply = input('Please answer Y/N only: ').lower()
-            if reply[0] == 'y':
-                inputValid = False
-                if temp_network_name == '':
-                    while not inputValid:
-                        net_name = input('Please enter a name for the new temporary network, same name will be reused for subsequent operations: ')
-                        temp_network_name == net_name
-                        inputValid = True
-                        for network in networks:
-                            if network['name'].lower() == net_name.lower():
-                                print ("Network already exists...Please try again")
-                                inputValid = False
-                validtypes = ['wireless', 'appliance', 'switch', 'systemsManager', 'camera', 'cellularGateway']
-                index = 0
-                print ('Please choose type of the a new network')
-                for ntype in validtypes:
-                    index = index + 1
-                    print(str(index) + ') ' + ntype)
-                inputValid = False
-                while not inputValid:
-                    inputRaw = input('option' + ': ')
-                    inputNo = int(inputRaw) - 1
-                    if inputNo > -1 and inputNo < len(validtypes):
-                        net_type = validtypes[inputNo]
-                        print('Selected option: ' + net_type)
-                        inputValid = True
-                        break
-                    else:
-                        print('Please select a valid option number')
-                print("Creating network " + net_name + ' and network type is ' + net_type + ' ...')
-                net_type_array = [net_type]
+            if add_network_type:
+                print("Creating network " + temp_network_name + ' and network type is ' + net_type + ' ...')
+                
                 ## Adding new network
                 try:
-                    response = dashboard.organizations.createOrganizationNetwork(org_id, net_name, net_type_array)
+                    response = dashboard.organizations.createOrganizationNetwork(org_id, temp_network_name, net_type_array)
                 except meraki.APIError as e:
                     print(f'Meraki API error: {e}')
                     print(f'status code = {e.status}')
@@ -201,26 +211,27 @@ def main(argv):
                         net_ids.append(split_network['id'])
                     response = dashboard.organizations.combineOrganizationNetworks(org_id, original_net_name, net_ids)
                     net_id = response["resultingNetwork"]['id']
-            ###########################################################
-            #     End of New device type issue fix 
-            ###########################################################
 
-        continue_run = input('Continue to update by binding all {0} networks to the {1} template? (Y/N) '.format(len(tagged_networks), arg_template))
-        if continue_run[0] == 'n':
-            quit()
-            
-        print('Binding network {0} to target template {1}'.format(net_name, arg_template))
-        if arg_switch in ('True', 'true'):
-            dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
-        else:
-            dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=False)
-        new_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
-        for new_vlan in new_vlans:
-            vlan_id = new_vlan['id']
-            old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
-            if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
-                dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
-
+        if not bind_template:
+            continue_run = input('Continue to update by binding all {0} networks to the {1} template? (Y/N) '.format(len(tagged_networks), arg_template))
+            if continue_run[0] == 'n':
+                quit()
+            else:
+                bind_template = True
+                print('Binding network {0} to target template {1}'.format(net_name, arg_template))
+                if arg_switch in ('True', 'true'):
+                    dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
+                else:
+                    dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=False)
+                new_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
+                for new_vlan in new_vlans:
+                    vlan_id = new_vlan['id']
+                    old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
+                    if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
+                        dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
+        ###########################################################
+        #     End of New device type issue fix part 2
+        ###########################################################
 
 if __name__ == '__main__':
     startTime = datetime.now()
