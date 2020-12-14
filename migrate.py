@@ -128,13 +128,13 @@ def main(argv):
     
 
     # Update and bind networks to template
+    temp_network_name = ''
     for network in tagged_networks:
         net_id = network['id']
         net_name = network['name']
         original_net_name = net_name
         old_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
         old_vlan_ids = [vlan['id'] for vlan in old_vlans]
-        temp_network_name = ''
         if 'configTemplateId' in network:
             template_name = template_names[template_ids.index(network['configTemplateId'])]
             print('Unbinding network {0} from current template {1}'.format(net_name, template_name))
@@ -145,14 +145,14 @@ def main(argv):
             ###########################################################
 
             #Prompt user if new network need to be added to this network
-            reply = input('Do you wish to add a new network to ' + net_name + '? (Y/N)' ).lower()
+            reply = input('Do you wish to add a new network type to ' + net_name + '? (Y/N)' ).lower()
             while reply[0] not in {"y", "n"}:
                 reply = input('Please answer Y/N only: ').lower()
             if reply[0] == 'y':
                 inputValid = False
                 if temp_network_name == '':
                     while not inputValid:
-                        net_name = input('Please enter the name for the new network: ')
+                        net_name = input('Please enter a name for the new temporary network, same name will be reused for subsequent operations: ')
                         temp_network_name == net_name
                         inputValid = True
                         for network in networks:
