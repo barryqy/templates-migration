@@ -21,6 +21,7 @@ Answer "y" to the question
 'Do you wish to add a new network to ' + net_name + '? (Y/N)'
 ```
 
+
 ## USAGE 
 python migrate.py -k <api_key> -o <org_id> -t <target_template_name> -n <network_tag> [-s <auto_bind>]
 If the target template's name has spaces, include quotes around it.
@@ -44,6 +45,11 @@ Please choose type of the a new network
 5) camera
 6) cellularGateway
 ```
+
+## Flow diagram
+
+![Alt text](Flow_diagram.jpg?raw=true "Flow diagram")
+
 ## Debug
 if need to debug please comment the following lines
 ```
