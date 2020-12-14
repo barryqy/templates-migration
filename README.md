@@ -20,7 +20,7 @@ https://developer.cisco.com/meraki/meraki-platform/#step-2-get-the-organization-
 New section added to fix new device type issues. Additional question will prompt user to add new device type into network.\
 Answer "y" to the question 
 ```
-'Do you wish to add a new network type to ' + net_name + '? (Y/N)'
+'Do you wish to add a new network type to all networks? (Y/N)'
 ```
 ## Flow diagram
 
