@@ -8,7 +8,12 @@ pip install -r requirements.txt
 
 ## DESCRIPTION
 This script finds all networks matching a network tag (configured on the Organization > Overview page's table), and binds those networks to the target template (by name). The network's current VLANs for unique subnets will be reconfigured after binding to the target template, since binding to a template regenerates these unique subnets. Also, if the network is currently bound to a different template, it will be unbound from that current template first.
-Optionally, auto-bind the network's switches to profiles, as specified in the API call: [dashboard.meraki.com/api_docs#bind-a-network-to-a-template](https://dashboard.meraki.com/api_docs#bind-a-network-to-a-template)
+ \
+Optionally, auto-bind the network's switches to profiles, as specified in the API call: \
+[dashboard.meraki.com/api_docs#bind-a-network-to-a-template](https://dashboard.meraki.com/api_docs#bind-a-network-to-a-template)
+ \
+Here's a link on how to get Organization ID: \
+https://developer.cisco.com/meraki/meraki-platform/#step-2-get-the-organization-id 
 
 
 ## New device type fix 
