@@ -229,7 +229,7 @@ def main(argv):
             for new_vlan in new_vlans:
                 vlan_id = new_vlan['id']
                 old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
-                    if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
+                if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
                     dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
         ###########################################################
         #     End of New device type issue fix part 2
