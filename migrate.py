@@ -134,6 +134,7 @@ def main(argv):
     add_network_type = False
     inputValid = False
     bind_template = False
+    bind_template_confirmed = False
     print("### New Device Type Issue Fix ###")
     reply = input('Do you wish to add a new network type to all ' + str(len(tagged_networks)) + ' networks? (Y/N)' ).lower()
     while reply[0] not in {"y", "n"}:
@@ -218,17 +219,18 @@ def main(argv):
                 quit()
             else:
                 bind_template = True
-                print('Binding network {0} to target template {1}'.format(net_name, arg_template))
-                if arg_switch in ('True', 'true'):
-                    dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
-                else:
-                    dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=False)
-                new_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
-                for new_vlan in new_vlans:
-                    vlan_id = new_vlan['id']
-                    old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
+        if bind_template:
+            print('Binding network {0} to target template {1}'.format(net_name, arg_template))
+            if arg_switch in ('True', 'true'):
+                dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=True)
+            else:
+                dashboard.networks.bindNetwork(net_id, target_template_id, autoBind=False)
+            new_vlans = dashboard.appliance.getNetworkApplianceVlans(net_id)
+            for new_vlan in new_vlans:
+                vlan_id = new_vlan['id']
+                old_vlan = old_vlans[old_vlan_ids.index(vlan_id)]
                     if new_vlan['subnet'] != old_vlan['subnet'] or new_vlan['applianceIp'] != old_vlan['applianceIp']:
-                        dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
+                    dashboard.appliance.updateNetworkApplianceVlan(net_id, vlan_id, subnet=old_vlan['subnet'], applianceIp=old_vlan['applianceIp'])
         ###########################################################
         #     End of New device type issue fix part 2
         ###########################################################
