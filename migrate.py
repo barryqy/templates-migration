@@ -96,7 +96,7 @@ def main(argv):
     )
 
     # Find all networks matching input tag
-    networks = dashboard.organizations.getOrganizationNetworks(org_id)
+    networks = dashboard.organizations.getOrganizationNetworks(org_id,-1)
     tagged_networks = [network for network in networks if network['tags'] is not None and arg_tag in network['tags']]
 
     # Find all templates
